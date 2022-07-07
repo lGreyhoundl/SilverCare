@@ -3,6 +3,7 @@
     <color name="purple_200">#0000FF</color>
     <color name="blue_sky">#1E90FF</color>
     <color name="blue_sky2">#1E90FF</color>
+    <color name='red'>#fc4130</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
