@@ -12,12 +12,17 @@ from database.execute import DataBaseTask
 from database.firebase import FireBase
 app = Flask(__name__)
 
+
+# pm2 start main.py  --interpreter python3.9 --name "FlaskServer"
+# pm2 start main.py  --interpreter python3.9 --name "FlaskServer" --watch --ignore-watch="/home/ec2-user/codefApiServer/Mail/* /home/ec2-user/codefApiServer/logs/*"
+
+
 @jit
 @app.route("/echo",  methods = ['POST'])
 def echo():
-    """회원가입 기능"""
-    Log.record("/echo", get_json)
+    """ echo"""
     get_json = request.get_json()
+    Log.record("/echo", get_json)
     return json.dumps(get_json, ensure_ascii=False), 200
 
 
