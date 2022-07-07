@@ -93,8 +93,8 @@ public class SignUpActivity extends AppCompatActivity {
 
                         }
                         if(Response.equals("200")){
-                            SharedPreferences auto = getSharedPreferences("phoneNumber", Activity.MODE_PRIVATE);
-                            SharedPreferences.Editor ContactEdit = auto.edit();
+                            SharedPreferences phoneNumber = getSharedPreferences("phoneNumber", Activity.MODE_PRIVATE);
+                            SharedPreferences.Editor ContactEdit = phoneNumber.edit();
                             ContactEdit.putString("elder_phoneNumber", UserSignupInform.getUserContactElder());
                             ContactEdit.putString("protector_phoneNumber", UserSignupInform.getUserContactProtector());
                             ContactEdit.commit();
