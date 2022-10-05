@@ -9,6 +9,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
 import android.widget.Button;
+import android.widget.GridView;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -31,6 +32,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.remote.silvercare.databinding.ActivityProtectorPageBinding;
+import com.remote.silvercare.ui.home.MoveDetectService;
 import com.remote.silvercare.ui.location.LocationFragment;
 
 public class ProtectorPageActivity extends AppCompatActivity {
@@ -38,11 +40,26 @@ public class ProtectorPageActivity extends AppCompatActivity {
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityProtectorPageBinding binding;
 
+    private Intent foregroundServiceIntent;
+
     String user_id;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Intent intent = getIntent();
+
+        if(null == MoveDetectService.serviceIntent){
+            foregroundServiceIntent = new Intent(this, MoveDetectService.class);
+            startService(foregroundServiceIntent);
+            Toast.makeText(getApplicationContext(), "동작감지 서비스를 시작합니다.", Toast.LENGTH_SHORT).show();
+        }else{
+//            foregroundServiceIntent = UndeadService.serviceIntent;
+            Intent call = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:119"));
+            startActivity(call);
+            Toast.makeText(getApplicationContext(), "이미 서비스가 실행중입니다.", Toast.LENGTH_SHORT).show();
+        }
 
         binding = ActivityProtectorPageBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -86,6 +103,15 @@ public class ProtectorPageActivity extends AppCompatActivity {
 
 
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(null != foregroundServiceIntent){
+            stopService(foregroundServiceIntent);
+            foregroundServiceIntent = null;
+        }
     }
 
     @Override
