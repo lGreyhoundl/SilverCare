@@ -3,31 +3,54 @@ package com.remote.silvercare;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.Toast;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
 
 public class UserLoginActivity extends AppCompatActivity {
     Thread LoginThread;
-    String Response = null;
-
+    JSONObject Response = null;
+    String Error = "501";
+    String ProtectorContact = null;
+    String ElderContact = null;
+    String HomeAddress = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_login);
+
+
+
+        PowerManager pm = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
+        boolean isWhiteListing = false;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            isWhiteListing = pm.isIgnoringBatteryOptimizations(getApplicationContext().getPackageName());
+        }
+        if (!isWhiteListing) {
+            Intent intent = new Intent();
+            intent.setAction(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
+            startActivity(intent);
+        }
 
         Button login_btn = (Button) findViewById(R.id.btn_login);
         Button signup_btn = (Button) findViewById(R.id.btn_signup);
@@ -80,20 +103,42 @@ public class UserLoginActivity extends AppCompatActivity {
                 loginThread(user_login_inform);
                 try {
                     LoginThread.join();
-                } catch (InterruptedException e) {
+                    Error = Response.getString("error");
+                    ProtectorContact = Response.getString("protector_contact");
+                    ElderContact = Response.getString("elder_contact");
+                    HomeAddress = Response.getString("address");
+
+                } catch (InterruptedException | JSONException e) {
                     e.printStackTrace();
                 }
                 try{
-                    Log.i("ErrorCode", Response);
+                    Log.i("ErrorCode", Error);
                 }catch (Exception e){
-                    Response = "-1";
+                    Error = "-1";
                 }
 
-                if (Response.equals("200")){
+                if (Error.equals("200")){
                     SharedPreferences auto = getSharedPreferences("autoLogin", Activity.MODE_PRIVATE);
                     SharedPreferences.Editor autoLoginEdit = auto.edit();
                     autoLoginEdit.putString("user_id", user_login_inform.getUserId());
                     autoLoginEdit.putString("user_pwd", user_login_inform.getUserPwd());
+                    autoLoginEdit.commit();
+
+                    SharedPreferences phoneNumber = getSharedPreferences("phoneNumber", Activity.MODE_PRIVATE);
+                    SharedPreferences.Editor ContactEdit = phoneNumber.edit();
+                    ContactEdit.putString("protector_phoneNumber", ProtectorContact);
+                    ContactEdit.putString("elder_phoneNumber", ElderContact);
+                    ContactEdit.commit();
+
+                    SharedPreferences homeAddress = getSharedPreferences("homeAddress", Activity.MODE_PRIVATE);
+                    SharedPreferences.Editor addressEdit = homeAddress.edit();
+                    addressEdit.putString("home_address", HomeAddress);
+                    addressEdit.commit();
+
+                    Log.i("address", HomeAddress);
+                    Log.i("protector_phoneNumber", ProtectorContact);
+                    Log.i("elder_phoneNumber", ElderContact);
+
                     if(protector_login.isChecked()){
                         autoLoginEdit.putString("protector", "true");
                     }
