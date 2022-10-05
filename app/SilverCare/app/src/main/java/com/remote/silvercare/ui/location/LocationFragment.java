@@ -1,6 +1,7 @@
 package com.remote.silvercare.ui.location;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Geocoder;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
@@ -37,10 +39,14 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.remote.silvercare.GetCurrentAddress;
 import com.remote.silvercare.LocationInform;
+import com.remote.silvercare.ProtectorPageActivity;
 import com.remote.silvercare.R;
 import com.remote.silvercare.RequestsHttp;
+import com.remote.silvercare.SignUpActivity;
 import com.remote.silvercare.UserInform;
+import com.remote.silvercare.UserLoginActivity;
 import com.remote.silvercare.databinding.FragmentLocationBinding;
+import com.remote.silvercare.ui.home.HomeFragment;
 
 import org.json.JSONObject;
 
@@ -76,46 +82,45 @@ public class LocationFragment extends Fragment {
         userInform.setUserContactElder(elderPhone.getString("elder_phoneNumber", null));
 
 
-        DatabaseReference locationRef = mRootRef.child("users").child(userInform.getUserId());
-        locationRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                locationInform = snapshot.getValue(LocationInform.class);
-                latitude = Double.parseDouble(locationInform.getLatitude());
-                longitude = Double.parseDouble(locationInform.getLongitude());
+            DatabaseReference locationRef = mRootRef.child("users").child(userInform.getUserId());
+            locationRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    locationInform = snapshot.getValue(LocationInform.class);
+                    latitude = Double.parseDouble(locationInform.getLatitude());
+                    longitude = Double.parseDouble(locationInform.getLongitude());
 
 //                Toast.makeText(getActivity(), userInform.getUserContactElder(), Toast.LENGTH_LONG).show();
 
-                supportMapFragment.getMapAsync(new OnMapReadyCallback() {
-                    @Override
-                    public void onMapReady(GoogleMap googleMap) {
+                    supportMapFragment.getMapAsync(new OnMapReadyCallback() {
+                        @Override
+                        public void onMapReady(GoogleMap googleMap) {
 
-                        mMap = googleMap;
+                            mMap = googleMap;
 
-                        LatLng home = new LatLng(latitude, longitude);
+                            LatLng home = new LatLng(latitude, longitude);
 
-                        GetCurrentAddress currentAddress = new GetCurrentAddress();
-                        Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
-                        String location = currentAddress.getCurrentAddress(geocoder, latitude, longitude);
+                            GetCurrentAddress currentAddress = new GetCurrentAddress();
+                            Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
+                            String location = currentAddress.getCurrentAddress(geocoder, latitude, longitude);
 
-                        MarkerOptions markerOptions = new MarkerOptions();
-                        markerOptions.position(home);
-                        markerOptions.title(userInform.getUserContactElder());
-                        markerOptions.snippet(location);
-                        mMap.addMarker(markerOptions);
+                            MarkerOptions markerOptions = new MarkerOptions();
+                            markerOptions.position(home);
+                            markerOptions.title(userInform.getUserContactElder());
+                            markerOptions.snippet(location);
+                            mMap.addMarker(markerOptions);
 
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(home, 15));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(home, 15));
 
-                        googleMap.setOnInfoWindowClickListener(infoWindowClickListener);
-                    }
-                });
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+                            googleMap.setOnInfoWindowClickListener(infoWindowClickListener);
+                        }
+                    });
+                }
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
 
-            }
-        });
-
+                }
+            });
         return view;
     }
 
