@@ -15,9 +15,9 @@ class DataBaseTask():
         try:
             self.cursor.execute(Query.signup, (user_signup_inform.user_id,
                                                     user_signup_inform.user_pwd,
-                                                    user_signup_inform.user_email,
                                                     user_signup_inform.user_contact_protector,
-                                                    user_signup_inform.user_contact_elder
+                                                    user_signup_inform.user_contact_elder,
+                                                    user_signup_inform.user_residence
                                                     ))
             self.conn.commit()
             Log.record("signup", f"{user_signup_inform.user_id} - {self.cursor._last_executed}")
@@ -52,4 +52,30 @@ class DataBaseTask():
             return pwd
             
         except Exception :
+            return "False"
+
+
+    def get_contact(self, user_login_inform:object) -> dict:
+        self.cursor.execute(Query.get_contact, (user_login_inform.user_id))
+        
+        try:
+            Log.record("get_contect", f"{user_login_inform.user_id} - {self.cursor._last_executed}")
+            contact = str(list(self.cursor)[0])
+            contact = contact[1:-1].replace("'","")
+            contact = contact.split(",")
+            
+            return contact
+            
+        except Exception :
+            return "False"
+        
+    def get_home_address(self, user_login_inform:object) -> dict:
+        self.cursor.execute(Query.get_home_address, (user_login_inform.user_id))
+        
+        try:
+            Log.record('get_home_address', f"{user_login_inform.user_id} - {self.cursor._last_executed}")
+            address = list(self.cursor)[0]  
+            return address[0]
+        
+        except Exception:
             return "False"
