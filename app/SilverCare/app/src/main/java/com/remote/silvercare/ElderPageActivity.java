@@ -7,6 +7,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -33,6 +34,7 @@ import com.google.android.material.bottomappbar.BottomAppBar;
 import com.google.android.material.bottomnavigation.BottomNavigationMenuView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -46,11 +48,12 @@ public class ElderPageActivity extends AppCompatActivity {
     private static final int GPS_ENABLE_REQUEST_CODE = 2001;
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     String[] REQUIRED_PERMISSIONS = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
-
+    String AccessBackgroundLocation = Manifest.permission.ACCESS_BACKGROUND_LOCATION;
     UserInform user_location_inform = new UserInform();
 
     Thread UpdateLocationThread;
-    String Response = null;
+    JSONObject Response = null;
+    String Error = "501";
 
     private Intent foregroundServiceIntent;
 
@@ -66,8 +69,6 @@ public class ElderPageActivity extends AppCompatActivity {
         }catch (Exception e){
             e.printStackTrace();
         }
-
-
 
         PowerManager pm = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
         boolean isWhiteListing = false;
@@ -87,20 +88,23 @@ public class ElderPageActivity extends AppCompatActivity {
             checkRunTimePermission();
         }
 
-
         if(null == UndeadService.serviceIntent){
             foregroundServiceIntent = new Intent(this, UndeadService.class);
             foregroundServiceIntent.putExtra("user_id", user_location_inform.getUserId());
             startService(foregroundServiceIntent);
-            Toast.makeText(getApplicationContext(), "start servoce", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "서비스를 시작합니다.", Toast.LENGTH_SHORT).show();
         }else{
-            foregroundServiceIntent = UndeadService.serviceIntent;
-            Toast.makeText(getApplicationContext(), "already", Toast.LENGTH_SHORT).show();
+//            foregroundServiceIntent = UndeadService.serviceIntent;
+            SharedPreferences elderPhone = this.getSharedPreferences("phoneNumber", Activity.MODE_PRIVATE);
+            Intent call = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:"+ elderPhone.getString("protector_phoneNumber", null)));
+            startActivity(call);
+            Toast.makeText(getApplicationContext(), "이미 서비스가 실행중입니다.", Toast.LENGTH_SHORT).show();
         }
 
 
         final TextView textview_address = (TextView)findViewById(R.id.textview);
 
+        GetLocation(textview_address);
 
         Button ShowLocationButton = (Button) findViewById(R.id.button);
         ShowLocationButton.setOnClickListener(new View.OnClickListener()
@@ -108,41 +112,7 @@ public class ElderPageActivity extends AppCompatActivity {
             @Override
             public void onClick(View arg0)
             {
-                SharedPreferences auto = getSharedPreferences("autoLogin", Activity.MODE_PRIVATE);
-                String UserId = auto.getString("user_id", null);
-
-                user_location_inform.setUserId(UserId);
-
-                gpsTracker = new GpsTracker(ElderPageActivity.this);
-
-                double latitude = gpsTracker.getLatitude();
-                double longitude = gpsTracker.getLongitude();
-
-                String address = getCurrentAddress(latitude, longitude);
-                textview_address.setText(address);
-                Log.i("latitude", String.valueOf(latitude));
-                Log.i("longitude", String.valueOf(longitude));
-
-                user_location_inform.setUserLatitude(String.valueOf(latitude));
-                user_location_inform.setUserLongitude(String.valueOf(longitude));
-
-                UpdateLocation(user_location_inform);
-
-                try {
-                    UpdateLocationThread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                try{
-                    Log.i("ErrorCode", Response);
-                }catch (Exception e){
-                    Response = "-1";
-                }
-
-                if (Response.equals("200")) {
-
-                    Toast.makeText(ElderPageActivity.this, "현재위치 \n위도 " + latitude + "\n경도 " + longitude, Toast.LENGTH_LONG).show();
-                }
+                GetLocation(textview_address);
             }
         });
     }
@@ -176,8 +146,8 @@ public class ElderPageActivity extends AppCompatActivity {
                 }
             }
             if (check_result) {
-                //위치 값을 가져올 수 있음
-                ;
+
+                ActivityCompat.requestPermissions(ElderPageActivity.this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 0);
             } else {
                 // 거부한 퍼미션이 있다면 앱을 사용할 수 없는 이유를 설명해주고 앱을 종료합니다.2 가지 경우가 있습니다.
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, REQUIRED_PERMISSIONS[0])
@@ -191,7 +161,24 @@ public class ElderPageActivity extends AppCompatActivity {
                 }
             }
         }
+
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("위치 권한 항상 허용").setMessage("위치 액세스 권한을 항상 허용으로 설정해주세요.");
+        builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ActivityCompat.requestPermissions(ElderPageActivity.this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 0);
+            }
+        });
+        builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Toast.makeText(ElderPageActivity.this, "퍼미션이 거부되었습니다. 설정(앱 정보)에서 퍼미션을 허용해야 합니다. ", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        });
     }
+
 
     void checkRunTimePermission(){
 
@@ -353,4 +340,41 @@ public class ElderPageActivity extends AppCompatActivity {
         UpdateLocationThread.start();
     }
 
+    private void GetLocation(TextView textview_address){
+        SharedPreferences auto = getSharedPreferences("autoLogin", Activity.MODE_PRIVATE);
+        String UserId = auto.getString("user_id", null);
+
+        user_location_inform.setUserId(UserId);
+
+        gpsTracker = new GpsTracker(ElderPageActivity.this);
+
+        double latitude = gpsTracker.getLatitude();
+        double longitude = gpsTracker.getLongitude();
+
+        String address = getCurrentAddress(latitude, longitude);
+        textview_address.setText(address);
+        Log.i("latitude", String.valueOf(latitude));
+        Log.i("longitude", String.valueOf(longitude));
+
+        user_location_inform.setUserLatitude(String.valueOf(latitude));
+        user_location_inform.setUserLongitude(String.valueOf(longitude));
+
+        UpdateLocation(user_location_inform);
+        try {
+            UpdateLocationThread.join();
+            Error = Response.getString("error");
+
+        } catch (InterruptedException | JSONException e) {
+            e.printStackTrace();
+        }
+        try{
+            Log.i("ErrorCode", Error);
+        }catch (Exception e){
+            Error = "-1";
+        }
+
+        if (Error.equals("200")) {
+//            Toast.makeText(ElderPageActivity.this, "현재위치 \n위도 " + latitude + "\n경도 " + longitude, Toast.LENGTH_LONG).show();
+        }
+    }
 }
