@@ -14,19 +14,20 @@ app = Flask(__name__)
 
 
 # pm2 start main.py  --interpreter python3.9 --name "FlaskServer"
-# pm2 start main.py  --interpreter python3.9 --name "FlaskServer" --watch --ignore-watch="/home/ec2-user/codefApiServer/Mail/* /home/ec2-user/codefApiServer/logs/*"
+# pm2 start main.py  --interpreter python3.9 --name "FlaskServer" --watch --ignore-watch="/home/ec2-user/* /home/ec2-user/logs/*"
 
 
-@jit
+
 @app.route("/echo",  methods = ['POST'])
 def echo():
     """ echo"""
     get_json = request.get_json()
+    print(get_json)
     Log.record("/echo", get_json)
-    return json.dumps(get_json, ensure_ascii=False), 200
+    return json.dumps("200", ensure_ascii=False), 200
 
 
-@jit
+
 @app.route("/signup",  methods = ['POST'])
 def signup():
     """회원가입 기능"""
@@ -59,12 +60,11 @@ def signup():
     return json.dumps(response_singup, ensure_ascii=False), 200
     # return json.dumps(200, ensure_ascii=False), 200
     
-@jit
+
 @app.route("/login", methods = ['POST'])
 def login():
     """ 장비 등록 기능 """
     get_json = request.get_json()
-    
     user_inform = Parser.login_parser(get_json)
     
     response_login = {}
@@ -80,6 +80,13 @@ def login():
     
     if user_inform.user_pwd == pwd :  
         response_login["error"] = "200"
+        response_login = db_task.get_contact(user_inform)
+        get_home_address = db_task.get_home_address(user_inform)
+        
+        response_login = {"error": "200",
+                          "protector_contact": response_login[0],
+                          "elder_contact": response_login[1],
+                          "address": get_home_address}
     else:
         response_login["error"] = "501"
         
@@ -89,7 +96,6 @@ def login():
     # return json.dumps(200, ensure_ascii=False), 200
     
     
-@jit
 @app.route("/login/location",  methods = ['POST'])
 def update_location():
     """위치 업데이트 기능"""
@@ -108,7 +114,7 @@ def update_location():
     
     return json.dumps(response_location, ensure_ascii=False), 200
     
-@jit
+
 @app.route("/login/RequestLocation",  methods = ['POST'])
 def send_location():
     """위치 전송 기능"""
@@ -127,7 +133,45 @@ def send_location():
     
     return json.dumps(response_location, ensure_ascii=False), 200
 
+
+
+@app.route("/login/DeviceRegister",  methods = ['POST'])
+def device_register():
+    """ 장치 등록 기능"""
+    get_json = request.get_json()
+    user_device_inform:object = Parser.device_data_parser(get_json)
     
+    response_device = {}
+    if user_device_inform.err_state == False:
+        response_device["error"] = "600"
+    
+    else:
+        FireBase.set_device_name(user_device_inform)
+        response_device["error"] = "200"
+    
+    Log.record("response_device",response_device)
+    
+    return json.dumps(response_device, ensure_ascii=False), 200
+
+
+@app.route("/login/DeviceStatus",  methods = ['POST'])
+def device_status():
+    """ 장비 상태 업데이트 """
+    get_json = request.get_json()
+    user_device_inform:object = Parser.device_data_parser(get_json)
+    
+    response_device = {}
+    if user_device_inform.err_state == False:
+        response_device["error"] = "600"
+    
+    else:
+        FireBase.set_device_status(user_device_inform)
+        response_device["error"] = "200"
+    
+    Log.record("response_device",response_device)
+    
+    return json.dumps(response_device, ensure_ascii=False), 200
+
 
 if __name__ == "__main__":
     # ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
