@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -22,6 +23,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -36,7 +38,8 @@ public class UndeadService extends Service {
     public static Intent serviceIntent = null;
     private GpsTracker gpsTracker;
     UserInform user_location_inform = new UserInform();
-    String Response = null;
+    JSONObject Response = null;
+    String Error = "501";
     Thread UpdateLocationThread;
     private String address;
 
@@ -51,7 +54,12 @@ public class UndeadService extends Service {
         double latitude = gpsTracker.getLatitude();
         double longitude = gpsTracker.getLongitude();
 
-        address = getCurrentAddress(latitude, longitude);
+
+        SharedPreferences homeAddress = getSharedPreferences("homeAddress", Activity.MODE_PRIVATE);
+        address = homeAddress.getString("home_address", null);
+
+//        address = getCurrentAddress(latitude, longitude);
+
         Log.i("latitude", String.valueOf(latitude));
         Log.i("longitude", String.valueOf(longitude));
 
@@ -67,13 +75,14 @@ public class UndeadService extends Service {
 
         try {
             UpdateLocationThread.join();
-        } catch (InterruptedException e) {
+            Error = Response.getString("error");
+        } catch (InterruptedException | JSONException e) {
             e.printStackTrace();
         }
         try{
-            Log.i("ErrorCode", Response);
+            Log.i("ErrorCode", Error);
         }catch (Exception e){
-            Response = "-1";
+            Error = "-1";
         }
 
         initializeNotification();
@@ -143,9 +152,16 @@ public class UndeadService extends Service {
         builder.setSmallIcon(R.mipmap.ic_launcher);
 
         NotificationCompat.BigTextStyle style = new NotificationCompat.BigTextStyle();
-        style.bigText(address);
+
+//        style.bigText(address);
+        Log.i("Address: ", address);
+
+
+        style.bigText("집 주소: " + address);
         style.setBigContentTitle(null);
-        style.setSummaryText("서비스 동작중");
+
+        SharedPreferences phoneNumber = getSharedPreferences("phoneNumber", Activity.MODE_PRIVATE);
+        style.setSummaryText("보호자 전화번호: " + phoneNumber.getString("protector_phoneNumber", null));
 
         builder.setContentText(null);
         builder.setContentTitle(null);
@@ -155,8 +171,10 @@ public class UndeadService extends Service {
         builder.setWhen(0);
         builder.setShowWhen(false);
 
-        Intent notificationIntent = new Intent(this, ElderPageActivity.class);
+//        Intent notificationIntent = new Intent(this, ElderPageActivity.class);
+        Intent notificationIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:"+ phoneNumber.getString("protector_phoneNumber", null)));
         PendingIntent pendingIntent;
+
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
             pendingIntent = PendingIntent.getActivity(this,
                     0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);

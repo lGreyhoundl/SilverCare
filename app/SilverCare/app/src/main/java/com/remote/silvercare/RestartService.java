@@ -1,11 +1,14 @@
 package com.remote.silvercare;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -27,11 +30,16 @@ public class RestartService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default");
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setContentTitle(null);
         builder.setContentText(null);
-        Intent notificationIntent = new Intent(this, ElderPageActivity.class);
+
+//        Intent notificationIntent = new Intent(this, UserLoginActivity.class);
+
+        SharedPreferences phoneNumber = getSharedPreferences("phoneNumber", Activity.MODE_PRIVATE);
+        Intent notificationIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:"+ phoneNumber.getString("protector_phoneNumber", null)));
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         builder.setContentIntent(pendingIntent);
 
