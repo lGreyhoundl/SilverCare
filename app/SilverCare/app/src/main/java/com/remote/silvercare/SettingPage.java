@@ -37,6 +37,11 @@ public class SettingPage extends AppCompatActivity {
                         editor.clear();
                         editor.commit();
 
+                        auto = getSharedPreferences("homeAddress", MODE_PRIVATE);
+                        editor = auto.edit();
+                        editor.clear();
+                        editor.commit();
+
                         Intent intent = new Intent(SettingPage.this, UserLoginActivity.class);
                         startActivity(intent);
                     }
