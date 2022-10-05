@@ -3,12 +3,10 @@ package com.remote.silvercare;
 public class UserInform {
     private String UserId;
     private String UserPwd;
-    private String UserEmail;
     private String UserContactProtector;
     private String UserContactElder;
     private String UserPosition;
     private String UserResidence;
-    private String UserDevice;
     private String UserLatitude;
     private String UserLongitude;
 
@@ -60,14 +58,6 @@ public class UserInform {
         UserPwd = userPwd;
     }
 
-    public String getUserEmail() {
-        return UserEmail;
-    }
-
-    public void setUserEmail(String userEmail) {
-        UserEmail = userEmail;
-    }
-
     public String getUserPosition() {
         return UserPosition;
     }
@@ -84,26 +74,17 @@ public class UserInform {
         UserResidence = userResidence;
     }
 
-    public String getUserDevice() {
-        return UserDevice;
-    }
-
-    public void setUserDevice(String userDevice) {
-        UserDevice = userDevice;
-    }
-
 
     public UserInform(){}
 
-    public UserInform(String UserId, String UserPwd, String UserEmail, String UserContactProtector, String UserContactElder, String UserPosition, String UserResidence, String UserDevice, String UserLatitude, String UserLongitude){
+    public UserInform(String UserId, String UserPwd, String UserContactProtector, String UserContactElder,
+                      String UserPosition, String UserResidence, String UserLatitude, String UserLongitude){
         this.UserId = UserId;
         this.UserPwd = UserPwd;
-        this.UserEmail = UserEmail;
         this.UserContactProtector = UserContactProtector;
         this.UserContactElder = UserContactElder;
         this.UserPosition = UserPosition;
         this.UserResidence = UserResidence;
-        this.UserDevice = UserDevice;
         this.UserLatitude = UserLatitude;
         this.UserLongitude = UserLongitude;
     }
